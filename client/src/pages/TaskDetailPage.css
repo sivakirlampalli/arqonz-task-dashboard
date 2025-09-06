@@ -1,0 +1,64 @@
+.task-detail-page {
+  max-width: 600px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #222;
+}
+
+.task-detail-page h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #1a237e;
+}
+
+.task-detail-img {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.task-detail-page p {
+  font-size: 16px;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.task-detail-page ul {
+  margin-top: 16px;
+  padding-left: 20px;
+  list-style-type: disc;
+  color: #555;
+}
+
+.task-detail-page ul li {
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.task-detail-page > div {
+  margin-top: 22px;
+  display: flex;
+  gap: 14px;
+}
+
+.task-detail-page > div img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #3d56f0;
+}
+
+/* Optional: hover effect on avatars */
+.task-detail-page > div img:hover {
+  border-color: #303f9f;
+  cursor: pointer;
+}
