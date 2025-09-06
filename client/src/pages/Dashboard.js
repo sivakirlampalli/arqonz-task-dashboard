@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./Dashboard.css";
 import StarIcon from "@mui/icons-material/Star";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -18,76 +18,80 @@ export default function Dashboard() {
   const [todayTask, setTodayTask] = useState(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [mentorCarouselIndex, setMentorCarouselIndex] = useState(0);
-  const visibleCount = 2; // Number of visible upcoming task cards
-  const visibleMentorCount = 2; // Number of visible mentor cards
+  const visibleCount = 2;
+  const visibleMentorCount = 2;
   const [openTask, setOpenTask] = useState(null);
-  const [selectedDate, setSelectedDate] = useState("2022-07-14"); // Default selected date for calendar
 
-  useEffect(() => {
-    // Initial fetch
-    fetchSummary();
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayISO);
 
-    // Poll every 5 seconds for real-time progress
-    const interval = setInterval(() => {
-      fetchSummary();
-    }, 5000);
-
-    // Initial fetch of mentors and upcoming tasks
-    fetch(`${baseUrl}/api/mentors`)
-      .then((res) => res.json())
-      .then(setMonthlyMentors);
-
-    fetch(`${baseUrl}/api/tasks/upcoming`)
-      .then((res) => res.json())
-      .then(setUpcomingTasks);
-
-    return () => clearInterval(interval);
-  }, [baseUrl]);
-
-  const fetchSummary = () => {
+  const fetchSummary = useCallback(() => {
     fetch(`${baseUrl}/api/tasks/summary`)
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         setRunningTasks(data.runningCount || 0);
         setCompletedTasks(data.completedCount || 0);
         setAverageProgress(data.averageProgress || 0);
       });
-  };
+  }, [baseUrl]);
 
-  // Fetch today's task based on selectedDate
+  useEffect(() => {
+    fetchSummary();
+    const interval = setInterval(() => {
+      fetchSummary();
+    }, 5000);
+
+    fetch(`${baseUrl}/api/mentors`)
+      .then(res => res.json())
+      .then(setMonthlyMentors);
+
+    fetch(`${baseUrl}/api/tasks/upcoming`)
+      .then(res => res.json())
+      .then(setUpcomingTasks);
+
+    return () => clearInterval(interval);
+  }, [fetchSummary, baseUrl]);
+
   useEffect(() => {
     if (!selectedDate) {
       setTodayTask(null);
       return;
     }
     fetch(`${baseUrl}/api/tasks/by-date?date=${selectedDate}`)
-      .then((res) => {
-        if (res.status === 404) return null;
+      .then(res => {
+        if (!res.ok) {
+          console.log("No task found for date:", selectedDate);
+          return null;
+        }
         return res.json();
       })
-      .then(setTodayTask)
-      .catch(() => setTodayTask(null));
+      .then(data => setTodayTask(data))
+      .catch(err => {
+        console.error("Error fetching today's task:", err);
+        setTodayTask(null);
+      });
   }, [selectedDate, baseUrl]);
 
   const totalTasks = runningTasks + completedTasks;
   const runningPercent = averageProgress;
 
-  // Task carousel handlers
-  const handlePrev = () => setCarouselIndex((prev) => Math.max(prev - visibleCount, 0));
+  // Task carousel controls
+  const handlePrev = () => setCarouselIndex(prev => Math.max(prev - visibleCount, 0));
   const handleNext = () =>
-    setCarouselIndex((prev) => Math.min(prev + visibleCount, upcomingTasks.length - visibleCount));
+    setCarouselIndex(prev => Math.min(prev + visibleCount, upcomingTasks.length - visibleCount));
 
-  // Mentor carousel handlers
-  const handleMentorPrev = () => setMentorCarouselIndex((prev) => Math.max(prev - visibleMentorCount, 0));
+  // Mentor carousel controls
+  const handleMentorPrev = () => setMentorCarouselIndex(prev => Math.max(prev - visibleMentorCount, 0));
   const handleMentorNext = () =>
-    setMentorCarouselIndex((prev) =>
+    setMentorCarouselIndex(prev =>
       Math.min(prev + visibleMentorCount, monthlyMentors.length - visibleMentorCount)
     );
 
+  // Toggle mentor follow state
   const handleToggleFollow = async (mentorId, currentFollowed) => {
     const newFollowState = !currentFollowed;
-    setMonthlyMentors((prev) =>
-      prev.map((m) => (m._id === mentorId ? { ...m, followed: newFollowState } : m))
+    setMonthlyMentors(prev =>
+      prev.map(m => (m._id === mentorId ? { ...m, followed: newFollowState } : m))
     );
     try {
       const res = await fetch(`${baseUrl}/api/mentors/${mentorId}/follow`, {
@@ -97,15 +101,16 @@ export default function Dashboard() {
       });
       if (!res.ok) throw new Error("Failed to update follow status");
     } catch (err) {
-      setMonthlyMentors((prev) =>
-        prev.map((m) => (m._id === mentorId ? { ...m, followed: currentFollowed } : m))
+      setMonthlyMentors(prev =>
+        prev.map(m => (m._id === mentorId ? { ...m, followed: currentFollowed } : m))
       );
       alert("Error updating follow status. Please try again.");
     }
   };
 
-  const isSelectedDate = (day) => {
-    const dayStr = `2022-07-${day.toString().padStart(2, "0")}`;
+  // Check if a calendar day is selected
+  const isSelectedDate = day => {
+    const dayStr = `${selectedDate.slice(0, 8)}${day.toString().padStart(2, "0")}`;
     return dayStr === selectedDate;
   };
 
@@ -128,13 +133,22 @@ export default function Dashboard() {
                 strokeDashoffset={2 * Math.PI * 29 * (1 - runningPercent / 100)}
                 style={{ transition: "stroke-dashoffset 1s ease" }}
               />
-              <text x={32.5} y={38} textAnchor="middle" fontSize={24} fill="#3D56F0" fontWeight={700}>
+              <text
+                x={32.5}
+                y={38}
+                textAnchor="middle"
+                fontSize={24}
+                fill="#3D56F0"
+                fontWeight={700}
+              >
                 {runningTasks}
               </text>
             </svg>
             <div className="running-task-info">
               <span>{runningPercent}%</span>
-              <span>{totalTasks} Task{totalTasks !== 1 ? "s" : ""}</span>
+              <span>
+                {totalTasks} Task{totalTasks !== 1 ? "s" : ""}
+              </span>
             </div>
           </section>
 
@@ -179,7 +193,7 @@ export default function Dashboard() {
           <div className="mentors-row mentors-carousel">
             {monthlyMentors
               .slice(mentorCarouselIndex, mentorCarouselIndex + visibleMentorCount)
-              .map((mentor) => (
+              .map(mentor => (
                 <div key={mentor._id} className="mentor-card">
                   <img src={mentor.avatar} alt={mentor.name} className="mentor-avatar" />
                   <div className="mentor-info">
@@ -230,7 +244,7 @@ export default function Dashboard() {
           <div className="tasks-row tasks-carousel">
             {upcomingTasks
               .slice(carouselIndex, carouselIndex + visibleCount)
-              .map((task) => (
+              .map(task => (
                 <div
                   key={task._id}
                   className="task-card"
@@ -274,7 +288,7 @@ export default function Dashboard() {
                 <div
                   key={idx}
                   className="date-wrapper"
-                  onClick={() => setSelectedDate(`2022-07-${dayNum.toString().padStart(2, "0")}`)}
+                  onClick={() => setSelectedDate(`2025-09-${dayNum.toString().padStart(2, "0")}`)}
                   style={{ cursor: "pointer" }}
                 >
                   <div className={`date-num${isSelectedDate(dayNum) ? " selected" : ""}`}>
@@ -328,7 +342,7 @@ export default function Dashboard() {
 
       {openTask && (
         <div className="modal-overlay" onClick={() => setOpenTask(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
             <h2>{openTask.title}</h2>
             <img
               src={openTask.image}
