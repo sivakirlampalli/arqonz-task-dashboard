@@ -7,8 +7,7 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const baseUrl = process.env.REACT_APP_API_URL || "";
+   const navigate = useNavigate();
 
   const [runningTasks, setRunningTasks] = useState(0);
   const [completedTasks, setCompletedTasks] = useState(0);
@@ -21,8 +20,8 @@ export default function Dashboard() {
   const visibleCount = 2; // Number of visible upcoming task cards
   const visibleMentorCount = 2; // Number of visible mentor cards
   const [openTask, setOpenTask] = useState(null);
-  const [selectedDate, setSelectedDate] = useState("2022-07-14"); // Default selected date for calendar
-
+  const [selectedDate, setSelectedDate] = useState("2022-07-14"); // Default selected date for calendar]
+ 
   useEffect(() => {
     // Initial fetch
     fetchSummary();
@@ -33,19 +32,19 @@ export default function Dashboard() {
     }, 5000);
 
     // Initial fetch of mentors and upcoming tasks
-    fetch(`${baseUrl}/api/mentors`)
+    fetch("/api/mentors")
       .then((res) => res.json())
       .then(setMonthlyMentors);
 
-    fetch(`${baseUrl}/api/tasks/upcoming`)
+    fetch("/api/tasks/upcoming")
       .then((res) => res.json())
       .then(setUpcomingTasks);
 
     return () => clearInterval(interval);
-  }, [baseUrl]);
+  }, []);
 
   const fetchSummary = () => {
-    fetch(`${baseUrl}/api/tasks/summary`)
+    fetch("/api/tasks/summary")
       .then((res) => res.json())
       .then((data) => {
         setRunningTasks(data.runningCount || 0);
@@ -60,14 +59,14 @@ export default function Dashboard() {
       setTodayTask(null);
       return;
     }
-    fetch(`${baseUrl}/api/tasks/by-date?date=${selectedDate}`)
+    fetch(`/api/tasks/by-date?date=${selectedDate}`)
       .then((res) => {
         if (res.status === 404) return null;
         return res.json();
       })
       .then(setTodayTask)
       .catch(() => setTodayTask(null));
-  }, [selectedDate, baseUrl]);
+  }, [selectedDate]);
 
   const totalTasks = runningTasks + completedTasks;
   const runningPercent = averageProgress;
@@ -90,7 +89,7 @@ export default function Dashboard() {
       prev.map((m) => (m._id === mentorId ? { ...m, followed: newFollowState } : m))
     );
     try {
-      const res = await fetch(`${baseUrl}/api/mentors/${mentorId}/follow`, {
+      const res = await fetch(`/api/mentors/${mentorId}/follow`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ followed: newFollowState }),
@@ -317,6 +316,7 @@ export default function Dashboard() {
                 </ul>
               )}
               <button className="btn-go-detail" onClick={() => navigate(`/task/${todayTask._id}`)}>Go To Detail</button>
+
             </section>
           </>
         ) : (

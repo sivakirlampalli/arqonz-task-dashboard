@@ -75,16 +75,17 @@ router.get('/today', async (req, res) => {
 });
 
 router.get('/by-date', async (req, res) => {
-  console.log("Incoming query:", req.query);
   try {
-    const { date } = req.query;
-    if (!date) return res.status(400).json({ message: "Date query parameter is required" });
+    const date = req.query.date;
+    if (!date) return res.status(400).json({ error: "Date parameter missing" });
 
     const start = new Date(date);
-    start.setUTCHours(0, 0, 0, 0);  // start of day UTC
+    start.setUTCHours(0, 0, 0, 0); // start of UTC day
 
     const end = new Date(date);
-    end.setUTCHours(23, 59, 59, 999);  // end of day UTC
+    end.setUTCHours(23, 59, 59, 999); // end of UTC day
+
+    console.log("Querying tasks deadline between", start.toISOString(), "and", end.toISOString());
 
     const task = await Task.findOne({
       deadline: { $gte: start, $lte: end }
@@ -94,7 +95,8 @@ router.get('/by-date', async (req, res) => {
 
     res.json(task);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Error fetching task by date:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
