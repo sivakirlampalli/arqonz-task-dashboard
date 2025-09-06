@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import './TaskDetailPage.css'
+import './TaskDetailPage.css';
 
 export default function TaskDetailPage() {
   const { id } = useParams();
   const [task, setTask] = useState(null);
+  const baseUrl = process.env.REACT_APP_API_URL || '';
 
   useEffect(() => {
-    fetch(`/api/tasks/${id}`)
+    fetch(`${baseUrl}/api/tasks/${id}`)
       .then(res => res.json())
       .then(setTask);
-  }, [id]);
+  }, [id, baseUrl]);
 
   if (!task) return <div>Loading...</div>;
 

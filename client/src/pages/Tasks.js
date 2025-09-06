@@ -14,19 +14,19 @@ const CATEGORY_OPTIONS = [
 ];
 
 export default function Tasks() {
+  const baseUrl = process.env.REACT_APP_API_URL || '';
   const [tasks, setTasks] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [sortOption, setSortOption] = useState("deadline");
 
   useEffect(() => {
-    // Build query string for category & sort
     let query = `?sort=${sortOption}`;
     if (selectedCategory) query += `&category=${encodeURIComponent(selectedCategory)}`;
-    fetch(`/api/tasks${query}`)
+    fetch(`${baseUrl}/api/tasks${query}`)
       .then((res) => res.json())
       .then(setTasks);
-  }, [selectedCategory, sortOption]);
+  }, [selectedCategory, sortOption, baseUrl]);
 
   const filteredTasks = tasks.filter((task) =>
     task.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -68,16 +68,7 @@ export default function Tasks() {
           <select
             className="btn"
             value={selectedCategory}
-            onChange={e => { 
-              setSelectedCategory(e.target.value);
-              const categoryVal = e.target.value;
-              let query = `?sort=${sortOption}`;
-              if (categoryVal) query += `&category=${encodeURIComponent(categoryVal)}`;
-              fetch(`/api/tasks${query}`)
-                .then((res) => res.json())
-                .then(setTasks);
-            
-            }}
+            onChange={e => setSelectedCategory(e.target.value)}
             style={{ minWidth: 140 }}
           >
             <option value="">Category</option>
@@ -89,17 +80,9 @@ export default function Tasks() {
           {/* Sort By Deadline Button */}
           <button
             className="btn btn-sort"
-            onClick={() => { setSortOption(sortOption === "deadline" ? "deadline_desc" : "deadline")
+            onClick={() => {
               const newSort = sortOption === "deadline" ? "deadline_desc" : "deadline";
               setSortOption(newSort);
-              let query = `?sort=${newSort}`;
-              if (selectedCategory) query += `&category=${encodeURIComponent(selectedCategory)}`;
-              fetch(`/api/tasks${query}`)
-                .then((res) => res.json())
-                .then(setTasks);
-
-
-
             }}
             title="Sort by Deadline"
           >

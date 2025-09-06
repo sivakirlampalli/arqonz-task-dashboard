@@ -10,6 +10,7 @@ server/node_modules/
 Thumbs.db
 
 # Environment files
+client/.env
 server/.env
 
 # Build folders (React/Vercel)
